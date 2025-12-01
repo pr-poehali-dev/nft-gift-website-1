@@ -142,7 +142,7 @@ const Index = () => {
       setUserInventory((prev) => [...prev, randomItem]);
       setOpenHistory((prev) => [{ item: randomItem, date: new Date() }, ...prev]);
       setIsOpening(false);
-    }, 7000);
+    }, 2700);
   };
 
   return (
@@ -313,7 +313,7 @@ const Index = () => {
                   className="flex gap-4 h-full items-center absolute left-1/2"
                   style={{ 
                     transform: `translateX(calc(-50% - ${scrollOffset}px))`,
-                    transition: 'transform 6.5s cubic-bezier(0.1, 0.6, 0.2, 1)'
+                    transition: 'transform 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
                   }}
                 >
                   {rouletteItems.map((item, idx) => (
