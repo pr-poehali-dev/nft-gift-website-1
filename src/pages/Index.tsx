@@ -127,14 +127,14 @@ const Index = () => {
 
     const allItems = [...caseData.items, ...caseData.items, ...caseData.items];
     const shuffledItems = [];
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 80; i++) {
       shuffledItems.push(allItems[Math.floor(Math.random() * allItems.length)]);
     }
-    shuffledItems[50] = randomItem;
+    shuffledItems[70] = randomItem;
     setRouletteItems(shuffledItems);
 
     setTimeout(() => {
-      setScrollOffset(50 * 152);
+      setScrollOffset(70 * 152);
     }, 100);
 
     setTimeout(() => {
