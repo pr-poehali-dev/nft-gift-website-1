@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -102,33 +102,60 @@ const Index = () => {
   const [openHistory, setOpenHistory] = useState<{ item: NFTItem; date: Date }[]>([
     { item: { id: 10, name: 'Стартовый артефакт', rarity: 'common', image: '🎁' }, date: new Date() },
   ]);
+  const [rouletteItems, setRouletteItems] = useState<NFTItem[]>([]);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const handleOpenCase = (caseData: CaseType) => {
     setIsOpening(true);
     setSelectedCase(caseData);
+    setIsSpinning(true);
+
+    const random = Math.random() * 100;
+    let cumulativeChance = 0;
+    let selectedRarity: 'common' | 'rare' | 'epic' | 'legendary' = 'common';
+
+    for (const prob of caseData.probabilities) {
+      cumulativeChance += prob.chance;
+      if (random <= cumulativeChance) {
+        selectedRarity = prob.rarity.toLowerCase() as any;
+        break;
+      }
+    }
+
+    const possibleItems = caseData.items.filter((item) => item.rarity === selectedRarity);
+    const randomItem = possibleItems[Math.floor(Math.random() * possibleItems.length)] || caseData.items[0];
+
+    const allItems = [...caseData.items, ...caseData.items, ...caseData.items];
+    const shuffledItems = [];
+    for (let i = 0; i < 50; i++) {
+      shuffledItems.push(allItems[Math.floor(Math.random() * allItems.length)]);
+    }
+    shuffledItems[44] = randomItem;
+    setRouletteItems(shuffledItems);
 
     setTimeout(() => {
-      const random = Math.random() * 100;
-      let cumulativeChance = 0;
-      let selectedRarity: 'common' | 'rare' | 'epic' | 'legendary' = 'common';
-
-      for (const prob of caseData.probabilities) {
-        cumulativeChance += prob.chance;
-        if (random <= cumulativeChance) {
-          selectedRarity = prob.rarity.toLowerCase() as any;
-          break;
-        }
-      }
-
-      const possibleItems = caseData.items.filter((item) => item.rarity === selectedRarity);
-      const randomItem = possibleItems[Math.floor(Math.random() * possibleItems.length)] || caseData.items[0];
-
-      setWonItem(randomItem);
-      setUserInventory((prev) => [...prev, randomItem]);
-      setOpenHistory((prev) => [{ item: randomItem, date: new Date() }, ...prev]);
-      setIsOpening(false);
-    }, 3000);
+      setIsSpinning(false);
+      setTimeout(() => {
+        setWonItem(randomItem);
+        setUserInventory((prev) => [...prev, randomItem]);
+        setOpenHistory((prev) => [{ item: randomItem, date: new Date() }, ...prev]);
+        setIsOpening(false);
+      }, 500);
+    }, 4000);
   };
+
+  useEffect(() => {
+    if (isSpinning && scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const targetPosition = 44 * 140 - container.offsetWidth / 2 + 70;
+      container.scrollTo({ left: 0, behavior: 'auto' });
+      
+      setTimeout(() => {
+        container.scrollTo({ left: targetPosition, behavior: 'smooth' });
+      }, 100);
+    }
+  }, [isSpinning]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -286,15 +313,33 @@ const Index = () => {
       </main>
 
       <Dialog open={isOpening || wonItem !== null} onOpenChange={() => setWonItem(null)}>
-        <DialogContent className="bg-card border-border max-w-md">
+        <DialogContent className="bg-card border-border max-w-4xl">
           {isOpening ? (
-            <div className="text-center py-8 space-y-6">
-              <div className="text-8xl animate-glow-pulse mx-auto">{selectedCase?.image}</div>
-              <DialogTitle className="text-3xl gold-text">Открываем кейс...</DialogTitle>
-              <div className="space-y-2">
-                <Progress value={66} className="h-2 animate-pulse" />
-                <p className="text-muted-foreground">Подготовка вашего NFT</p>
+            <div className="py-8 space-y-6">
+              <DialogTitle className="text-3xl gold-text text-center">Открываем кейс...</DialogTitle>
+              <div className="relative h-48 overflow-hidden">
+                <div className="absolute top-1/2 left-1/2 w-1 h-full bg-primary z-10 -translate-x-1/2 glow-gold-strong"></div>
+                <div className="absolute top-0 left-0 w-1/4 h-full bg-gradient-to-r from-background to-transparent z-10"></div>
+                <div className="absolute top-0 right-0 w-1/4 h-full bg-gradient-to-l from-background to-transparent z-10"></div>
+                <div 
+                  ref={scrollContainerRef}
+                  className="flex gap-4 overflow-x-hidden h-full items-center px-8"
+                  style={{ scrollBehavior: 'smooth', transition: 'scroll 4s cubic-bezier(0.25, 0.1, 0.25, 1)' }}
+                >
+                  {rouletteItems.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex-shrink-0 w-32 h-32 flex flex-col items-center justify-center bg-muted/80 rounded-lg border-2 border-border p-3"
+                    >
+                      <div className="text-5xl mb-2">{item.image}</div>
+                      <Badge className={`${rarityColors[item.rarity]} text-xs`}>
+                        {rarityLabels[item.rarity]}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
               </div>
+              <p className="text-muted-foreground text-center animate-pulse">Прокручиваем NFT...</p>
             </div>
           ) : wonItem ? (
             <div className="text-center py-8 space-y-6 animate-scale-in">
