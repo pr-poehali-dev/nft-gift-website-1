@@ -103,13 +103,12 @@ const Index = () => {
     { item: { id: 10, name: 'Стартовый артефакт', rarity: 'common', image: '🎁' }, date: new Date() },
   ]);
   const [rouletteItems, setRouletteItems] = useState<NFTItem[]>([]);
-  const [isSpinning, setIsSpinning] = useState(false);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollOffset, setScrollOffset] = useState(0);
 
   const handleOpenCase = (caseData: CaseType) => {
     setIsOpening(true);
     setSelectedCase(caseData);
-    setIsSpinning(true);
+    setScrollOffset(0);
 
     const random = Math.random() * 100;
     let cumulativeChance = 0;
@@ -128,34 +127,23 @@ const Index = () => {
 
     const allItems = [...caseData.items, ...caseData.items, ...caseData.items];
     const shuffledItems = [];
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 60; i++) {
       shuffledItems.push(allItems[Math.floor(Math.random() * allItems.length)]);
     }
-    shuffledItems[44] = randomItem;
+    shuffledItems[50] = randomItem;
     setRouletteItems(shuffledItems);
 
     setTimeout(() => {
-      setIsSpinning(false);
-      setTimeout(() => {
-        setWonItem(randomItem);
-        setUserInventory((prev) => [...prev, randomItem]);
-        setOpenHistory((prev) => [{ item: randomItem, date: new Date() }, ...prev]);
-        setIsOpening(false);
-      }, 500);
-    }, 4000);
-  };
+      setScrollOffset(50 * 152);
+    }, 100);
 
-  useEffect(() => {
-    if (isSpinning && scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      const targetPosition = 44 * 140 - container.offsetWidth / 2 + 70;
-      container.scrollTo({ left: 0, behavior: 'auto' });
-      
-      setTimeout(() => {
-        container.scrollTo({ left: targetPosition, behavior: 'smooth' });
-      }, 100);
-    }
-  }, [isSpinning]);
+    setTimeout(() => {
+      setWonItem(randomItem);
+      setUserInventory((prev) => [...prev, randomItem]);
+      setOpenHistory((prev) => [{ item: randomItem, date: new Date() }, ...prev]);
+      setIsOpening(false);
+    }, 5000);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -317,29 +305,31 @@ const Index = () => {
           {isOpening ? (
             <div className="py-8 space-y-6">
               <DialogTitle className="text-3xl gold-text text-center">Открываем кейс...</DialogTitle>
-              <div className="relative h-48 overflow-hidden">
-                <div className="absolute top-1/2 left-1/2 w-1 h-full bg-primary z-10 -translate-x-1/2 glow-gold-strong"></div>
-                <div className="absolute top-0 left-0 w-1/4 h-full bg-gradient-to-r from-background to-transparent z-10"></div>
-                <div className="absolute top-0 right-0 w-1/4 h-full bg-gradient-to-l from-background to-transparent z-10"></div>
+              <div className="relative h-48 overflow-hidden bg-muted/20 rounded-lg">
+                <div className="absolute top-0 left-1/2 w-1 h-full bg-primary z-20 -translate-x-1/2 shadow-[0_0_20px_rgba(212,175,55,0.8)]"></div>
+                <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-card via-card/50 to-transparent z-10"></div>
+                <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-card via-card/50 to-transparent z-10"></div>
                 <div 
-                  ref={scrollContainerRef}
-                  className="flex gap-4 overflow-x-hidden h-full items-center px-8"
-                  style={{ scrollBehavior: 'smooth', transition: 'scroll 4s cubic-bezier(0.25, 0.1, 0.25, 1)' }}
+                  className="flex gap-4 h-full items-center absolute left-1/2"
+                  style={{ 
+                    transform: `translateX(calc(-50% - ${scrollOffset}px))`,
+                    transition: 'transform 4.5s cubic-bezier(0.15, 0.5, 0.1, 1)'
+                  }}
                 >
                   {rouletteItems.map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex-shrink-0 w-32 h-32 flex flex-col items-center justify-center bg-muted/80 rounded-lg border-2 border-border p-3"
+                      className="flex-shrink-0 w-36 h-40 flex flex-col items-center justify-center bg-card rounded-xl border-2 border-border p-4 shadow-lg"
                     >
-                      <div className="text-5xl mb-2">{item.image}</div>
-                      <Badge className={`${rarityColors[item.rarity]} text-xs`}>
+                      <div className="text-6xl mb-3">{item.image}</div>
+                      <Badge className={`${rarityColors[item.rarity]} text-xs px-3 py-1`}>
                         {rarityLabels[item.rarity]}
                       </Badge>
                     </div>
                   ))}
                 </div>
               </div>
-              <p className="text-muted-foreground text-center animate-pulse">Прокручиваем NFT...</p>
+              <p className="text-muted-foreground text-center animate-pulse text-lg">🎰 Определяем ваш приз...</p>
             </div>
           ) : wonItem ? (
             <div className="text-center py-8 space-y-6 animate-scale-in">
